@@ -37,12 +37,12 @@ def update_html(news_data):
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AI News Portal</title>
+        <title>AbroadNews</title>
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-gray-100">
         <header class="bg-white shadow p-4 text-center">
-            <h1 class="text-2xl font-bold text-indigo-600">Samachar AI Portal</h1>
+            <h1 class="text-2xl font-bold text-indigo-600">abroad-news</h1>
             <p class="text-sm text-gray-500">Last Updated: Just Now</p>
         </header>
         <main class="container mx-auto p-4 space-y-6">
