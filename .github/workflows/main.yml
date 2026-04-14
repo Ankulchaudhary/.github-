@@ -2,20 +2,22 @@ name: AbroadNews
 
 on:
   schedule:
-    # Yeh har 4 ghante mein chalega (IST ke hisaab se set kiya ja sakta hai)
     - cron: '0 */4 * * *'
-  workflow_dispatch: # Isse aap button daba kar manually bhi update kar sakte hain
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # YE LINE SABSE ZAROORI HAI PERMISSION KE LIYE
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
@@ -25,23 +27,16 @@ jobs:
 
     - name: Run News Script
       env:
-        # Yeh keys aapko GitHub Settings > Secrets mein daalni hongi
         NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: python update_news.py
 
-    - name: Commit and Push Changes
+    - name: Commit and Push Everything
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
-        git add index.html
-        git commit -m "Latest AI News Updated" || echo "No changes to commit"
-        git push
-    - name: Commit and Push Changes
-      run: |
-        git config --global user.name "GitHub Action"
-        git config --global user.email "action@github.com"
+        # Ek hi baar mein dono files add karein
         git add index.html news-sitemap.xml
-        git commit -m "Latest AI News and Sitemap Updated" || echo "No changes to commit"
+        git commit -m "Latest AI News and Sitemap Updated: $(date)" || echo "No changes to commit"
         git push
-
+        
