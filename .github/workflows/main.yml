@@ -1,36 +1,45 @@
 name: AbroadNews
+
 on:
+  schedule:
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 jobs:
-  run-ai:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
-      # Bina kisi 'uses' ke direct checkout
-      - name: Clone Repository
-        run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} .
-          git checkout main
+    - name: Checkout Repository
+      # v4 stable version
+      uses: actions/checkout@v4
 
-      - name: Install Python and Deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install requests google-generativeai
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-      - name: Run News Script
-        env:
-          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python3 update_news.py
+    - name: Install New SDK and Deps
+      run: |
+        python -m pip install --upgrade pip
+        # Purane 'google-generativeai' ki jagah naya 'google-genai'
+        pip install requests google-genai
 
-      - name: Push Changes
-        run: |
-          git config --global user.name "AI-Bot"
-          git config --global user.email "bot@github.com"
-          git add .
-          git commit -m "AI Update Done" || exit 0
-          git push
-          
+    - name: Run News Script
+      env:
+        NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: python update_news.py
+
+    - name: Commit and Push Everything
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add index.html
+        # Agar sitemap file hai toh woh bhi add ho jaye
+        git add news-sitemap.xml || echo "Sitemap not found, skipping"
+        git commit -m "Latest AI News Updated: $(date)" || echo "No changes to commit"
+        git push origin main
+        
