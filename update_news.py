@@ -3,125 +3,97 @@ import requests
 import google.generativeai as genai
 from datetime import datetime
 
-# 1. API Keys (GitHub Secrets se automatic aayengi)
+# 1. API Keys
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Gemini Setup - 'gemini-pro' use kar rahe hain stable connection ke liye
+# Gemini Setup with Error Handling for Model Names
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-pro")
+
+def get_model():
+    # Hum sabse pehle 1.5-flash try karenge, phir pro
+    for m in ["gemini-1.5-flash", "gemini-pro", "models/gemini-1.5-flash"]:
+        try:
+            model = genai.GenerativeModel(m)
+            # Chhota sa test run
+            model.generate_content("test")
+            print(f"Using model: {m}")
+            return model
+        except:
+            continue
+    return None
+
+model = get_model()
 
 def get_news():
-    # Global English news fetch kar rahe hain taki results pakka milein
-    url = f"https://newsapi.org/v2/top-headlines?language=en&pageSize=10&apiKey={NEWS_API_KEY}"
+    url = f"https://newsapi.org/v2/top-headlines?language=en&pageSize=5&apiKey={NEWS_API_KEY}"
     try:
         response = requests.get(url)
         data = response.json()
-        
-        if data.get('status') != 'ok':
-            print(f"News API Error: {data.get('message')}")
-            return []
-            
         articles = data.get('articles', [])
-        # Sirf wo news jinme Title aur Description dono ho
-        valid_news = [a for a in articles if a.get('title') and a.get('description')]
-        return valid_news[:3] 
-    except Exception as e:
-        print(f"Fetching Error: {e}")
+        return [a for a in articles if a.get('title') and a.get('description')][:3]
+    except:
         return []
 
 def analyze_news(title, desc):
-    prompt = f"""
-    Tum ek expert news analyst ho. Is news ko Hindi mein analyze karo:
-    Title: {title}
-    Description: {desc}
+    if not model:
+        print("No working Gemini model found!")
+        return None
     
-    Format:
-    HEADLINE: [Hindi Headline]
-    SUMMARY: [Short Hindi Summary]
-    INSIGHT: [1 Line Future Analysis in Hindi]
-    """
+    prompt = f"Analyze this news in Hindi. Format: HEADLINE: [Title], SUMMARY: [News], INSIGHT: [Analysis]. News: {title} - {desc}"
     try:
         response = model.generate_content(prompt)
-        # Check if response has text
-        if response and response.text:
-            return response.text
-        return None
+        return response.text if response else None
     except Exception as e:
-        print(f"Gemini Analysis Error: {e}")
+        print(f"Gemini Error: {e}")
         return None
 
 def update_html(news_list):
-    # IST Time format
     now = datetime.now().strftime('%d %b %Y | %I:%M %p')
-    
     html_content = f"""
     <!DOCTYPE html>
     <html lang="hi">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Abroad News - AI Portal</title>
+        <title>Abroad News</title>
         <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
-        <style>body {{ font-family: 'Noto Sans Devanagari', sans-serif; }}</style>
     </head>
-    <body class="bg-gray-100">
-        <header class="bg-indigo-900 text-white p-8 text-center shadow-2xl">
-            <h1 class="text-4xl font-bold tracking-tight">ABROAD NEWS</h1>
-            <p class="text-indigo-200 mt-2 font-mono text-sm underline">LAST UPDATED: {now}</p>
+    <body class="bg-slate-100">
+        <header class="bg-blue-900 text-white p-6 text-center shadow-lg">
+            <h1 class="text-3xl font-bold">ABROAD NEWS</h1>
+            <p class="text-sm opacity-75">AI Update: {now}</p>
         </header>
-        <main class="container mx-auto p-6 max-w-3xl space-y-8">
+        <main class="container mx-auto p-4 max-w-2xl space-y-6">
     """
-    
     for news in news_list:
         lines = [l.strip() for l in news.split('\n') if l.strip()]
-        h, s, i = "Breaking News", "Update ho raha hai...", "Analysis pending."
-        
+        h, s, i = "News", "Update...", "Analysis..."
         for line in lines:
-            if "HEADLINE:" in line: h = line.replace("HEADLINE:", "").strip()
-            elif "SUMMARY:" in line: s = line.replace("SUMMARY:", "").strip()
-            elif "INSIGHT:" in line: i = line.replace("INSIGHT:", "").strip()
-
+            if "HEADLINE:" in line: h = line.replace("HEADLINE:", "")
+            if "SUMMARY:" in line: s = line.replace("SUMMARY:", "")
+            if "INSIGHT:" in line: i = line.replace("INSIGHT:", "")
+        
         html_content += f"""
-            <article class="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-indigo-500">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">{h}</h2>
-                <p class="text-gray-600 mb-6 leading-relaxed text-lg">{s}</p>
-                <div class="bg-indigo-50 p-4 rounded-xl text-indigo-900 text-sm italic">
-                    <strong>💡 AI Insight:</strong> {i}
-                </div>
-            </article>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-600">
+                <h2 class="text-xl font-bold mb-2">{h}</h2>
+                <p class="text-gray-600 mb-4">{s}</p>
+                <p class="text-sm italic text-blue-800">Insight: {i}</p>
+            </div>
         """
-    
-    html_content += """
-        </main>
-        <footer class="text-center p-12 text-gray-400 text-sm">
-            &copy; 2026 Abroad News | Powered by Google Gemini Pro
-        </footer>
-    </body>
-    </html>
-    """
-    
+    html_content += "</main></body></html>"
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
 
-# Execution
-print("Khabrein dhoond raha hoon...")
-raw_news = get_news()
-
-if not raw_news:
-    print("API se news nahi mili. Key check karein.")
-else:
-    print(f"{len(raw_news)} khabrein mili hain. Gemini analyze kar raha hai...")
-    analyzed_list = []
-    for article in raw_news:
-        res = analyze_news(article['title'], article['description'])
-        if res:
-            analyzed_list.append(res)
+# Final Execution
+news_data = get_news()
+if news_data:
+    final_list = []
+    for art in news_data:
+        res = analyze_news(art['title'], art['description'])
+        if res: final_list.append(res)
     
-    if analyzed_list:
-        update_html(analyzed_list)
-        print("Success: Website update ho gayi!")
-    else:
-        print("Error: Gemini response khali hai.")
+    if final_list:
+        update_html(final_list)
+        print("Success: Website Updated!")
         
