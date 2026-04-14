@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://ankulchaudhary.github.io/.github-/news-article-link</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Samachar AI</news:name>
+        <news:language>hi</news:language>
+      </news:publication>
+      <news:publication_date>2026-04-14T12:00:00+05:30</news:publication_date>
+      <news:title>AI News: Kya automation badal dega reporting ka tarika?</news:title>
+    </news:news>
+  </url>
+</urlset>
