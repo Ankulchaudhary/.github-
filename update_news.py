@@ -3,7 +3,8 @@ import requests
 import google.generativeai as genai
 
 # 1. API Keys (GitHub Secrets se uthayi jayengi)
-NEWS_API_KEY = os.getenv("")
+NEWS_API_KEY = os.getenv("NEWS_API_KEY") # Khali "" ki jagah ye likhein
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Gemini Setup
@@ -50,7 +51,8 @@ def update_html(news_data):
     
     for item in news_data:
         # Gemini ke response ko parse karna (Simple split method)
-        lines = item.split('\n')
+        lines = [l for l in lines if l.strip()] # Khali lines ko hatane ke liye
+        
         html_content += f"""
             <article class="bg-white p-6 rounded-xl shadow-md border-l-4 border-indigo-500">
                 <h2 class="text-xl font-bold mb-2">{lines[0].replace('HEADLINE:', '')}</h2>
