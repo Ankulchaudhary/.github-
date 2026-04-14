@@ -1,0 +1,40 @@
+name: Update AI News Website
+
+on:
+  schedule:
+    # Yeh har 6 ghante mein chalega (IST ke hisaab se set kiya ja sakta hai)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Isse aap button daba kar manually bhi update kar sakte hain
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Dependencies
+      run: |
+        pip install requests google-generativeai
+
+    - name: Run News Script
+      env:
+        # Yeh keys aapko GitHub Settings > Secrets mein daalni hongi
+        NEWS_API_KEY: ${{ secrets.9d77b7a55c434fcba2944c9c87d2befa }}
+        GEMINI_API_KEY: ${{ secrets.AIzaSyDv4CYRUR6afDv5vtPXqel-O68wbf3QCo0 }}
+      run: python update_news.py
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        git add index.html
+        git commit -m "Latest AI News Updated" || echo "No changes to commit"
+        git push
+        
