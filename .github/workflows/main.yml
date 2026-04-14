@@ -13,18 +13,18 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      # v4 stable version
-      uses: actions/checkout@v4
+      # actions/checkout@v4 ki asli SHA ID
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      # actions/setup-python@v5 ki asli SHA ID
+      uses: actions/setup-python@f67e2448e993c57446f9b1b606553098651c60da
       with:
         python-version: '3.10'
 
     - name: Install New SDK and Deps
       run: |
         python -m pip install --upgrade pip
-        # Purane 'google-generativeai' ki jagah naya 'google-genai'
         pip install requests google-genai
 
     - name: Run News Script
@@ -38,8 +38,6 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add index.html
-        # Agar sitemap file hai toh woh bhi add ho jaye
-        git add news-sitemap.xml || echo "Sitemap not found, skipping"
         git commit -m "Latest AI News Updated: $(date)" || echo "No changes to commit"
         git push origin main
         
