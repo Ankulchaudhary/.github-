@@ -37,4 +37,11 @@ jobs:
         git add index.html
         git commit -m "Latest AI News Updated" || echo "No changes to commit"
         git push
-        
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        git add index.html news-sitemap.xml
+        git commit -m "Latest AI News and Sitemap Updated" || echo "No changes to commit"
+        git push
+
