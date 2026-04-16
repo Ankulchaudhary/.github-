@@ -3,15 +3,15 @@ import requests
 from google import genai
 from datetime import datetime
 
-# 1. API Keys (GitHub Secrets se automatic aayengi)
+# 1. API Keys (GitHub Secrets)
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# New SDK Setup - Gemini 2.0 ke liye
+# Gemini 2.0 Client Setup
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def get_news():
-    # Global English news fetch kar rahe hain taki results pakka milein
+    # Global news fetch kar rahe hain
     url = f"https://newsapi.org/v2/top-headlines?language=en&pageSize=5&apiKey={NEWS_API_KEY}"
     try:
         r = requests.get(url)
@@ -20,13 +20,14 @@ def get_news():
             print(f"News API Error: {data.get('message')}")
             return []
         articles = data.get('articles', [])
-        return [a for a in articles if a.get('title') and a.get('description')][:3]
+        # Quota bachaane ke liye sirf top 2 news le rahe hain
+        return [a for a in articles if a.get('title') and a.get('description')][:2]
     except Exception as e:
         print(f"News Fetching Error: {e}")
         return []
 
 def analyze_with_gemini(title, desc):
-    # Gemini 2.0 Flash use kar rahe hain jo 404 nahi dega
+    # Gemini 2.0 Flash - Sabse fast aur latest
     prompt = f"Analyze this news in Hindi. Format: HEADLINE: [Title], SUMMARY: [News], INSIGHT: [Analysis]. News: {title} - {desc}"
     try:
         response = client.models.generate_content(
@@ -63,13 +64,12 @@ def update_html(news_list):
     
     for news in news_list:
         if not news: continue
-        # Parsing Logic
         try:
             h = news.split("HEADLINE:")[1].split("SUMMARY:")[0].strip()
             s = news.split("SUMMARY:")[1].split("INSIGHT:")[0].strip()
             i = news.split("INSIGHT:")[1].strip()
         except:
-            h, s, i = "Breaking News", news[:100], "Analysis in progress..."
+            h, s, i = "Breaking Update", news[:150], "Analysis in progress..."
         
         html_content += f"""
             <article class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 hover:shadow-xl transition-all duration-300">
@@ -92,11 +92,11 @@ def update_html(news_list):
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
 
-# Execution logic
+# Main Execution
 print("Step 1: Fetching News...")
 raw_data = get_news()
 if raw_data:
-    print(f"Step 2: Found {len(raw_data)} articles. Sending to Gemini 2.0...")
+    print(f"Step 2: Found {len(raw_data)} articles. Sending to Gemini...")
     final_results = []
     for art in raw_data:
         analysis = analyze_with_gemini(art['title'], art['description'])
@@ -107,7 +107,7 @@ if raw_data:
         update_html(final_results)
         print("Step 3: SUCCESS! Website updated.")
     else:
-        print("Error: Gemini analysis failed.")
+        print("Error: Gemini Quota Full or Analysis failed.")
 else:
-    print("Error: No news fetched from API.")
+    print("Error: No news fetched.")
     
